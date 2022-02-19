@@ -500,13 +500,14 @@ APPLE_DEVICE_TYPES    = [IPHONE, IPAD, IPOD, WATCH, 'iwatch', 'icloud',
 FMF_FAMSHR_LOCATION_FIELDS = ['altitude', 'latitude', 'longitude', 'timestamp',
                        'horizontalAccuracy', 'verticalAccuracy', ATTR_ICLOUD_BATTERY_STATUS]
 
-#Convert zone/state value to display value
+STATIONARY_FNAME = "Ortsfest"
+#Convert zone/state value to display value #         "stationary": "Stationary",
 ZONE_TO_DISPLAY_BASE = {
         None: "not_home",
         "not_home": "Away",
         "not_set": "NotSet",
         "away": "Away",
-        "stationary": "Stationary",
+        "stationary": STATIONARY_FNAME,
         "nearzone": "NearZone",
         "near_zone": "NearZone",
         }
@@ -5396,7 +5397,7 @@ class Icloud3:#(DeviceScanner):
                     self._save_event(devicename, event_msg)
 
                 else:
-                    self.zone_to_display[stat_zone_name]   = 'Stationary'
+                    self.zone_to_display[stat_zone_name]   = STATIONARY_FNAME
                     self.state_to_zone[stat_zone_name] = stat_zone_name
 
                 return True
@@ -6200,7 +6201,7 @@ class Icloud3:#(DeviceScanner):
             self.stat_zone_devicename_icon[icon_name]  = devicename
 
             stat_zone_name = self._format_zone_name(devicename, STATIONARY)
-            self.zone_to_display[stat_zone_name] = "Stationary"
+            self.zone_to_display[stat_zone_name] = STATIONARY_FNAME
 
         except Exception as err:
             _LOGGER.exception(err)
@@ -6334,8 +6335,8 @@ class Icloud3:#(DeviceScanner):
                         self.state_to_zone[ztitle_w] = zone
 
                 if instr(zone.lower(), STATIONARY):
-                    self.zone_to_display[zone] = 'Stationary'
-                    self.zone_fname[zone]      = 'Stationary'
+                    self.zone_to_display[zone] = STATIONARY_FNAME
+                    self.zone_fname[zone]      = STATIONARY_FNAME
 
                     self.zone_home_lat    = self.zone_lat.get(HOME)
 
@@ -6825,7 +6826,7 @@ class Icloud3:#(DeviceScanner):
             #from the FamShr data and the 'me' device will be located using FamShr
             friend_valid_emails_msg = self._get_me_device_id(api_friends, friend_valid_emails_msg)
 
-            log_msg = (f"Friends in the FindMy app data that can be located > {friend_valid_emails_msg}")
+            log_msg = (f"Friends in the FindMy app data that can be located (v4)> {friend_valid_emails_msg}")
             self._save_event_halog_info("*", log_msg)
 
             for devicename in self.devicename_verified:
@@ -6856,25 +6857,24 @@ class Icloud3:#(DeviceScanner):
         #No devices to track error, display emails anyway
         if self.devicename_email == {}:
             for friend_email in friend_emails:
-                if (instr(friend_email, '@')
+                if ((instr(friend_email, '@') or  friend_email.startswith("+"))
                         and instr(friend_valid_emails_msg, friend_email) is False):
                      friend_valid_emails_msg += (f"{CRLF_DOT}{friend_email}")
             return devicename_friend_emails, friend_valid_emails_msg
 
         for parm_email in self.devicename_email:
-            if instr(parm_email, '@') is False:
+            if not parm_email.startswith("+") and not instr(parm_email, '@'):
                 continue
-
             #cycle thru the contacts emails
             matched_friend = False
             devicename = self.devicename_email.get(parm_email, "")
 
             for friend_email in friend_emails:
-                if instr(friend_email, '@') is False:
+                if not friend_email.startswith("+") and not instr(friend_email, '@'):
                     continue
                 elif devicename in self.devicename_evlog_tracked_msg:
                     continue
-
+                
                 if instr(friend_valid_emails_msg, friend_email) is False:
                     friend_valid_emails_msg += (f"{CRLF_DOT}{friend_email}")
 
